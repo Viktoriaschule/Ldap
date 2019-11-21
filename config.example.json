@@ -1,6 +1,6 @@
 {
     "username": "USERNAME",
     "password": "PASSWORD",
-    "basUrl": "BASE_URL",
+    "url": "BASE_URL",
     "port": "PORT"
 }
