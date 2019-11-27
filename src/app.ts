@@ -5,7 +5,12 @@ import authorizer, { authRouter } from './authentication/auth_butler';
 
 const app = express();
 app.use(cors());
-app.use(basicAuth({ authorizer: authorizer, challenge: true, authorizeAsync: true }));
+app.use(basicAuth({ 
+    authorizer: authorizer, 
+    challenge: true, 
+    authorizeAsync: true, 
+    unauthorizedResponse: {status: false}
+}));
 
 app.get('/', (req, res) => {
     res.send('Hello world!');

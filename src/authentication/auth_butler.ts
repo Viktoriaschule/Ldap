@@ -1,15 +1,15 @@
 import checkLogin from './ldap_client';
 import express from 'express';
+import getAuth from '../utils/auth';
 
 export const authRouter = express.Router();
 
-authRouter.get('/', (req, res) => {
-    const status = checkLogin(req.params.username, req.params.password);
-    return res.json({status: status});
+authRouter.get('/', async (req, res) => {
+    return res.json({status: true});
 });
 
-function authorizer(username: string, password: string): Promise<boolean>{
-    return checkLogin(username, password);
+async function authorizer(username: string, password: string, authorize: any): Promise<void>{
+    authorize(null, await checkLogin(username, password));
 }
 
 export default authorizer;
