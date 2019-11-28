@@ -7,10 +7,19 @@ import { create } from 'domain';
 const checkLogin = async (username: string, password: string): Promise<boolean> => {
     const client = getClient()
     const success = await bind(username, password, client);
-    if (success) {
-        await getGrade(client);
-    }
     return success;
+}
+
+export const getUser = async (auth: any) => {
+    const client = getClient()
+    const success = await bind(auth.username, auth.password, client);
+    if (success) {
+        const groups = await getGroups(client, auth.username);
+        const grade = groups.filter((group) => group.length === 2)[0];
+        const isTeacher = groups.includes('lehrer');
+        return {grade, isTeacher};
+    }
+    return undefined;
 }
 
 const getClient = (): ldap.Client => ldap.createClient({
@@ -32,14 +41,28 @@ const bind = (username: string, password: string, client: ldap.Client): Promise<
     });
 }
 
-export const getGrade = (client: ldap.Client): Promise<string> => {
+const getGroups = (client: ldap.Client, username: string): Promise<string[]> => {
     
-    return new Promise<string>((resolve, reject) => {
+    return new Promise<string[]>((resolve, reject) => {
         const searchOptions: ldap.SearchOptions = {
+            scope: 'sub',
+            attributes: ['cn'],
+            filter: `(member=CN=${username},CN=Users,DC=ad,DC=aachen-vsa,DC=logodidact,DC=net)`
         };
+        const groups: any = [];
         client.search('CN=Users,DC=ad,DC=aachen-vsa,DC=logodidact,DC=net', searchOptions, (err, res) => {
-            console.log(err, res);
-            resolve();
+            res.on('searchEntry', function(entry) {
+                groups.push(entry.object.cn);
+              });
+              res.on('searchReference', function(referral) {
+                console.log('referral: ' + referral.uris.join());
+              });
+              res.on('error', function(err) {
+              });
+              res.on('end', function(result: any) {
+                if (result.status !== 0) reject();
+                else resolve(groups);
+              });
         });
     });
 }
