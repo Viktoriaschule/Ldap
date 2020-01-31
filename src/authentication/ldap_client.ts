@@ -10,6 +10,16 @@ const checkLogin = async (username: string, password: string): Promise<boolean> 
     return success;
 }
 
+export const checkUser = async (username: string, auth: any): Promise<boolean | undefined> => {
+    const client = getClient()
+    const success = await bind(auth.username, auth.password, client);
+    if (success) {
+        const groups = await getGroups(client, username);
+        return groups.length > 0;
+    }
+    return undefined;
+}
+
 export const getUser = async (auth: any) => {
     const client = getClient()
     const success = await bind(auth.username, auth.password, client);
@@ -17,7 +27,7 @@ export const getUser = async (auth: any) => {
         const groups = await getGroups(client, auth.username);
         const grade = groups.filter((group) => group.length === 2)[0];
         const isTeacher = groups.includes('lehrer');
-        return {grade, isTeacher};
+        return { grade, isTeacher };
     }
     return undefined;
 }
@@ -35,14 +45,14 @@ const bind = (username: string, password: string, client: ldap.Client): Promise<
                 return;
             }
             resolve(true);
-            console.log('logged in');
+            // console.log('logged in');
             return;
         });
     });
 }
 
 const getGroups = (client: ldap.Client, username: string): Promise<string[]> => {
-    
+
     return new Promise<string[]>((resolve, reject) => {
         const searchOptions: ldap.SearchOptions = {
             scope: 'sub',
@@ -51,18 +61,18 @@ const getGroups = (client: ldap.Client, username: string): Promise<string[]> => 
         };
         const groups: any = [];
         client.search('CN=Users,DC=ad,DC=aachen-vsa,DC=logodidact,DC=net', searchOptions, (err, res) => {
-            res.on('searchEntry', function(entry) {
+            res.on('searchEntry', function (entry) {
                 groups.push(entry.object.cn);
-              });
-              res.on('searchReference', function(referral) {
+            });
+            res.on('searchReference', function (referral) {
                 console.log('referral: ' + referral.uris.join());
-              });
-              res.on('error', function(err) {
-              });
-              res.on('end', function(result: any) {
+            });
+            res.on('error', function (err) {
+            });
+            res.on('end', function (result: any) {
                 if (result.status !== 0) reject();
                 else resolve(groups);
-              });
+            });
         });
     });
 }
