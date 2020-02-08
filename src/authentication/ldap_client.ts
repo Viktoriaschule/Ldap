@@ -56,14 +56,10 @@ export const getFullName = async (username: string, auth: { username: string, pa
     const success = await bind(auth.username, auth.password, client);
     if (success) {
         return new Promise<string>((resolve, reject) => {
-            const searchOptions: ldap.SearchOptions = {
-                scope: 'sub',
-                attributes: ['displayName']
-            };
             const names: any = [];
-            client.search(`CN=${username},CN=Users,DC=ad,DC=aachen-vsa,DC=logodidact,DC=net`, searchOptions, (err, res) => {
+            client.search(`CN=${username},CN=Users,DC=ad,DC=aachen-vsa,DC=logodidact,DC=net`, {}, (err, res) => {
                 res.on('searchEntry', function (entry) {
-                    names.push(entry.object.cn);
+		    names.push(entry.object.displayName);
                 });
                 res.on('searchReference', function (referral) {
                     console.log('referral: ' + referral.uris.join());
