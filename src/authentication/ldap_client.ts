@@ -51,8 +51,33 @@ const bind = (username: string, password: string, client: ldap.Client): Promise<
     });
 }
 
-const getGroups = (client: ldap.Client, username: string): Promise<string[]> => {
+export const getFullName = async (username: string, auth: { username: string, password: string }): Promise<string> => {
+    const client = getClient()
+    const success = await bind(auth.username, auth.password, client);
+    if (success) {
+        return new Promise<string>((resolve, reject) => {
+            const names: any = [];
+            client.search(`CN=${username},CN=Users,DC=ad,DC=aachen-vsa,DC=logodidact,DC=net`, {}, (err, res) => {
+                res.on('searchEntry', function (entry) {
+		    names.push(entry.object.displayName);
+                });
+                res.on('searchReference', function (referral) {
+                    console.log('referral: ' + referral.uris.join());
+                });
+                res.on('error', function (err) {
+                });
+                res.on('end', function (result: any) {
+                    if (result.status !== 0) reject();
+                    else resolve(names[0]);
+                });
+            });
+        });
+    } else {
+        return '';
+    }
+}
 
+const getGroups = (client: ldap.Client, username: string): Promise<string[]> => {
     return new Promise<string[]>((resolve, reject) => {
         const searchOptions: ldap.SearchOptions = {
             scope: 'sub',
